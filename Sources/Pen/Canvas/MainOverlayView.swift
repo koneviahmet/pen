@@ -7,6 +7,7 @@ struct MainOverlayView: View {
 
     @State private var currentStrokePoints: [CGPoint] = []
     @State private var activeTextId: UUID?
+    @State private var qrAutoHideToken = UUID()
 
     /// `DragGesture` ve `Canvas` aynı SwiftUI koordinat uzayını paylaşır (sol üst köken, Y aşağı).
     private static let canvasCoordinateSpaceName = "penCanvas"
@@ -38,6 +39,8 @@ struct MainOverlayView: View {
 
                 spotlightLayer
                     .allowsHitTesting(false)
+
+                qrResultCard
 
                 MouseTrackingRepresentable(enabled: shouldTrackMouse) { point, pressure in
                     appState.lastPressure = max(0.25, pressure)
@@ -78,6 +81,16 @@ struct MainOverlayView: View {
             .coordinateSpace(name: Self.canvasCoordinateSpaceName)
             .frame(width: geo.size.width, height: geo.size.height)
             .background(Color.clear)
+            .onChange(of: appState.qrScanValue) { _, newValue in
+                guard newValue != nil else { return }
+                let token = UUID()
+                qrAutoHideToken = token
+                DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                    guard qrAutoHideToken == token else { return }
+                    appState.qrScanValue = nil
+                    appState.qrScanMessage = nil
+                }
+            }
         }
     }
 
@@ -132,6 +145,60 @@ struct MainOverlayView: View {
                 .compositingGroup()
             }
             .allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder
+    private var qrResultCard: some View {
+        if let value = appState.qrScanValue {
+            VStack {
+                HStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Image(systemName: "qrcode")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.88))
+                        Text(value)
+                            .font(.system(size: 12, weight: .regular, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.95))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: 320, alignment: .leading)
+                        Button {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(value, forType: .string)
+                            qrAutoHideToken = UUID()
+                            appState.qrScanValue = nil
+                            appState.qrScanMessage = nil
+                        } label: {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.9))
+                                .frame(width: 22, height: 22)
+                                .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.black.opacity(0.74))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.16), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.28), radius: 10, x: 0, y: 6)
+                    .padding(.trailing, 18)
+                    .padding(.top, 18)
+                }
+                Spacer()
+            }
+            .allowsHitTesting(true)
+            .transition(.opacity.combined(with: .move(edge: .top)))
+            .animation(.easeInOut(duration: 0.18), value: appState.qrScanValue != nil)
         }
     }
 }

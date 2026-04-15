@@ -35,7 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             magnifier = MagnifierWindowController(appState: appState, overlayWindowNumber: Int(winNum))
         }
 
-        shortcuts = ShortcutController(document: document)
+        shortcuts = ShortcutController(document: document, appState: appState)
 
         globalShortcuts = GlobalShortcutMonitor()
         globalShortcuts?.start { [weak self] in

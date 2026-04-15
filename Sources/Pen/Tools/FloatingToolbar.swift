@@ -29,6 +29,7 @@ struct FloatingToolbar: View {
             shapeFamilyCluster
             toolButton(.text)
             toolButton(.select)
+            qrScanButton
 
             toolbarDivider
 
@@ -894,6 +895,45 @@ struct FloatingToolbar: View {
         }
         .buttonStyle(.plain)
         .help(tool.tooltipTitle)
+    }
+
+    private var qrScanButton: some View {
+        Button {
+            guard !appState.qrScanInProgress else { return }
+            appState.qrScanInProgress = true
+            appState.qrScanMessage = "QR alanını seçin (iptal: Esc)."
+            appState.qrScanValue = nil
+            penFlyoutExpanded = false
+            lineArrowFlyoutExpanded = false
+            shapeFlyoutExpanded = false
+            colorFlyoutExpanded = false
+            whiteboardFlyoutExpanded = false
+
+            QRCodeScanFlow.start(overlayWindowNumber: CGWindowID(overlayWindowNumber)) { result in
+                appState.qrScanInProgress = false
+                appState.qrScanValue = result.value
+                appState.qrScanMessage = result.value == nil ? nil : result.message
+            }
+        } label: {
+            ZStack {
+                if appState.qrScanInProgress {
+                    Circle()
+                        .fill(ToolbarChrome.selectionCircleFill)
+                        .frame(width: 30, height: 30)
+                }
+                Image(systemName: appState.qrScanInProgress ? "qrcode.viewfinder" : "qrcode")
+                    .font(ToolbarChrome.toolbarIconFont)
+                    .symbolRenderingMode(.monochrome)
+                    .foregroundStyle(
+                        appState.qrScanInProgress ? ToolbarChrome.selectionIconOnCircle : ToolbarChrome.iconOnBar
+                    )
+            }
+            .frame(width: 38, height: 34)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(appState.qrScanInProgress)
+        .help("QR tara")
     }
 
     /// Kalınlık (1…36): yatay, yan paletle uyumlu — − / önizleme / + / değer.

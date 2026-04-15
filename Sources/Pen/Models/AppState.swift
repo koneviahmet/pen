@@ -24,6 +24,9 @@ final class AppState: ObservableObject {
     @Published var magnifierEnabled: Bool = false
     @Published var toolbarCollapsed: Bool = false
     @Published var toolbarEdge: ToolbarEdge = .leading
+    @Published var qrScanInProgress: Bool = false
+    @Published var qrScanValue: String?
+    @Published var qrScanMessage: String?
 
     /// Ana araç çubuğu sürükleme ofseti (sağ-alt + padding referansına göre).
     @Published var floatingToolbarOffset: CGSize = AppPreferences.floatingToolbarOffset

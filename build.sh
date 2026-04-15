@@ -15,6 +15,14 @@ MACOS_PATH="${CONTENTS_PATH}/MacOS"
 RESOURCES_PATH="${CONTENTS_PATH}/Resources"
 PLIST_PATH="${CONTENTS_PATH}/Info.plist"
 
+if pgrep -x "${APP_NAME}" > /dev/null; then
+  echo "==> ${APP_NAME} is running, closing it before build"
+  pkill -x "${APP_NAME}"
+  while pgrep -x "${APP_NAME}" > /dev/null; do
+    sleep 0.2
+  done
+fi
+
 echo "==> Building release binary"
 swift build -c release --package-path "${ROOT_DIR}"
 
